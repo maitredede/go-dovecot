@@ -15,7 +15,7 @@ type DictServer struct {
 	logger *zap.SugaredLogger
 }
 
-func NewDictDictServer(be Backend, logger *zap.SugaredLogger) (*DictServer, error) {
+func NewDictServer(be Backend, logger *zap.SugaredLogger) (*DictServer, error) {
 	h := &DictServer{
 		be:     be,
 		logger: logger,
