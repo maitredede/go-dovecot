@@ -1,4 +1,4 @@
-module github.com/MaitreDede/go-dovecot
+module github.com/maitredede/go-dovecot
 
 go 1.17
 
