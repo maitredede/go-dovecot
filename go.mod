@@ -8,7 +8,7 @@ require (
 )
 
 require (
-	github.com/petermattis/goid v0.0.0-20180202154549-b0b1615b78e5 // indirect
-	go.uber.org/atomic v1.7.0 // indirect
-	go.uber.org/multierr v1.6.0 // indirect
+	github.com/petermattis/goid v0.0.0-20220331194723-8ee3e6ded87a // indirect
+	go.uber.org/atomic v1.9.0 // indirect
+	go.uber.org/multierr v1.8.0 // indirect
 )
