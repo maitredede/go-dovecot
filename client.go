@@ -12,6 +12,9 @@ import (
 )
 
 type Client interface {
+	RemoteAddr() net.Addr
+	LocalAddr() net.Addr
+	String() string
 }
 
 type clientImpl struct {
@@ -20,16 +23,25 @@ type clientImpl struct {
 	logger *zap.SugaredLogger
 	be     Backend
 
-	major        int
-	minor        int
-	valueType    DataType
-	user         string
-	dictName     string
 	transactions map[int]interface{}
 	txLock       deadlock.Mutex
+
+	major     int
+	minor     int
+	valueType DataType
+	user      string
+	dictName  string
 }
 
 var _ Client = (*clientImpl)(nil)
+
+func (c *clientImpl) RemoteAddr() net.Addr {
+	return c.conn.RemoteAddr()
+}
+
+func (c *clientImpl) LocalAddr() net.Addr {
+	return c.conn.LocalAddr()
+}
 
 type commandHandler func(args []string) error
 
