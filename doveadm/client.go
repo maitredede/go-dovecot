@@ -73,6 +73,8 @@ func (c *Client) ExecuteCommand(ctx context.Context, command string, parameters 
 	return data, fmt.Errorf("TODO")
 }
 
+//DictGet Get key value from configured dictionary
+// https://doc.dovecot.org/admin_manual/doveadm_http_api/#doveadm-dict-get
 func (c *Client) DictGet(ctx context.Context, user string, dictUri string, key string) (interface{}, error) {
 
 	params := make(map[string]interface{})
@@ -83,4 +85,22 @@ func (c *Client) DictGet(ctx context.Context, user string, dictUri string, key s
 	params["key"] = key
 
 	return c.ExecuteCommand(ctx, "dictGet", params, "tag1")
+}
+
+//Reload Reload dovecot configuration
+// https://doc.dovecot.org/admin_manual/doveadm_http_api/#doveadm-reload
+func (c *Client) Reload(ctx context.Context) (interface{}, error) {
+
+	params := make(map[string]interface{})
+
+	return c.ExecuteCommand(ctx, "reload", params, "tag1")
+}
+
+//Stop Shutdown dovecot
+// https://doc.dovecot.org/admin_manual/doveadm_http_api/#doveadm-stop
+func (c *Client) Stop(ctx context.Context) (interface{}, error) {
+
+	params := make(map[string]interface{})
+
+	return c.ExecuteCommand(ctx, "stop", params, "tag1")
 }
