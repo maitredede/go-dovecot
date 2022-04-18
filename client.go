@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/sasha-s/go-deadlock"
+	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
 
@@ -23,7 +24,7 @@ type clientImpl struct {
 	logger *zap.SugaredLogger
 	be     Backend
 
-	transactions map[int]interface{}
+	transactions map[string]*transaction
 	txLock       deadlock.Mutex
 
 	major     int
@@ -31,6 +32,10 @@ type clientImpl struct {
 	valueType DataType
 	user      string
 	dictName  string
+}
+
+type transaction struct {
+	values map[string]interface{}
 }
 
 var _ Client = (*clientImpl)(nil)
@@ -170,7 +175,7 @@ func (c *clientImpl) reply(command Reply, args ...string) error {
 func (c *clientImpl) processLookup(args []string) error {
 	keyArg := args[0]
 
-	c.logger.Debugf("looking up %v", keyArg)
+	// c.logger.Debugf("looking up %v", keyArg)
 	keyArr := strings.SplitN(keyArg, "/", 2)
 
 	keyType := keyArr[0]
@@ -183,29 +188,49 @@ func (c *clientImpl) processLookup(args []string) error {
 
 	c.logger.Debugf("  lookup keyType=%v key=%v ns=%v", keyType, key, ns)
 
-	arr := strings.SplitN(key, "/", 2)
-	dictName := arr[0]
-	search := arr[1]
-
-	result, err := c.be.Lookup(c, dictName, search)
-	if err == nil {
-		return c.reply(ReplyOK, result)
+	reply, result, err := c.be.Lookup(c, keyType, key, ns)
+	if err != nil {
+		errReply := c.reply(ReplyError, err.Error())
+		return multierr.Combine(err, errReply)
 	}
-	errReply := c.reply(ReplyError, err.Error())
-	if errReply != nil {
-		return errReply
-	}
-	return err
+	return c.reply(reply, result)
 }
 
 func (c *clientImpl) processBegin(args []string) error {
-	c.logger.Warnf("processBegin %v", args)
-	return c.reply(ReplyFail, "not implemented")
+	c.logger.Debugf("processBegin %v", args)
+
+	c.txLock.Lock()
+	defer c.txLock.Unlock()
+
+	transactionID := args[0]
+
+	tx := &transaction{
+		values: make(map[string]interface{}),
+	}
+	c.transactions[transactionID] = tx
+
+	return c.reply(ReplyOK, transactionID)
 }
 
 func (c *clientImpl) processSet(args []string) error {
-	c.logger.Warnf("processSet %v", args)
-	return c.reply(ReplyFail, "not implemented")
+	c.logger.Debugf("processSet %v", args)
+
+	c.txLock.Lock()
+	defer c.txLock.Unlock()
+
+	transactionID := args[0]
+	key := args[1]
+	value := args[2]
+
+	tx, ok := c.transactions[transactionID]
+	if !ok {
+		c.logger.Error("processSet: transaction id=%v does not exists", transactionID)
+		return c.reply(ReplyFail, "transaction not found")
+	}
+
+	tx.values[key] = value
+
+	return c.reply(ReplyOK, "")
 }
 
 func (c *clientImpl) processCommit(args []string) error {

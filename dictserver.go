@@ -57,7 +57,7 @@ func (h *DictServer) newClient(conn net.Conn) *clientImpl {
 		logger: h.logger,
 		be:     h.be,
 
-		transactions: make(map[int]interface{}),
+		transactions: make(map[string]*transaction),
 	}
 	return c
 }

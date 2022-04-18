@@ -64,3 +64,28 @@ const (
 	TypeString DataType = 0
 	TypeInt    DataType = 1
 )
+
+type IterateFlags int
+
+const (
+	IterateFlagRecurse     IterateFlags = 0x01
+	IterateFlagSortByKey   IterateFlags = 0x02
+	IterateFlagSortByValue IterateFlags = 0x04
+	IterateFlagNoValue     IterateFlags = 0x08
+	IterateFlagExactKey    IterateFlags = 0x10
+	IterateFlagAsync       IterateFlags = 0x20
+)
+
+const (
+	PathShared  = "shared/"
+	PathPrivate = "priv/"
+)
+
+type CommitRet int
+
+const (
+	CommitRetOK             CommitRet = 1
+	CommitRetNotFound       CommitRet = 0
+	CommitRetFailed         CommitRet = -1
+	CommitRetWriteUncertain CommitRet = -2
+)

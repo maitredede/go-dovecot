@@ -1,5 +1,5 @@
 package dovecot
 
 type Backend interface {
-	Lookup(client Client, dict string, search string) (string, error)
+	Lookup(client Client, keyType string, key string, namespace string) (Reply, string, error)
 }
