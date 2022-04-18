@@ -1,6 +1,6 @@
 module github.com/maitredede/go-dovecot
 
-go 1.17
+go 1.18
 
 require (
 	github.com/sasha-s/go-deadlock v0.3.1
