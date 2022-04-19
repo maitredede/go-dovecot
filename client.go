@@ -1,6 +1,7 @@
 package dovecot
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -18,6 +19,7 @@ type Client interface {
 	LocalAddr() net.Addr
 	String() string
 	User() string
+	Dict() string
 }
 
 type clientImpl struct {
@@ -54,6 +56,10 @@ func (c *clientImpl) User() string {
 	return c.user
 }
 
+func (c *clientImpl) Dict() string {
+	return c.dictName
+}
+
 type commandHandler func(args []string) error
 
 func (c *clientImpl) handleClient() {
@@ -66,7 +72,7 @@ func (c *clientImpl) handleClient() {
 		reqLen, err := c.conn.Read(buf)
 		if err != nil {
 			if err == io.EOF {
-				c.logger.Warn("client disconnected")
+				c.logger.Debug("client disconnected")
 				return
 			}
 			c.logger.Error("Error reading:", err.Error())
@@ -75,7 +81,6 @@ func (c *clientImpl) handleClient() {
 
 		data := buf[0:reqLen]
 		dataStr := string(data)
-		c.logger.Debugf("read %v", dataStr)
 		lines := strings.Split(dataStr, "\n")
 		for _, line := range lines {
 			if len(line) < 2 {
@@ -158,22 +163,28 @@ func (c *clientImpl) String() string {
 	return fmt.Sprintf("client %v.%v type '%v', user '%v', dict '%v'", c.major, c.minor, c.valueType, c.user, c.dictName)
 }
 
-func (c *clientImpl) reply(command Reply, args ...string) error {
-	c.logger.Debugf("replying %v with %v", command, args)
+func (c *clientImpl) reply(response Reply, args ...string) error {
+	// c.logger.Debugf("replying %v with %v", string([]byte{byte(response)}), args)
 
-	if _, err := c.conn.Write([]byte{byte(command)}); err != nil {
-		return fmt.Errorf("reply command failed: %w", err)
+	packet := &bytes.Buffer{}
+	if _, err := packet.Write([]byte{byte(response)}); err != nil {
+		return fmt.Errorf("reply response failed: %w", err)
 	}
 	argsEscaped := make([]string, len(args))
-	for i, v := range args {
-		argsEscaped[i] = Tabescape(v)
+	for i, a := range args {
+		argsEscaped[i] = Tabescape(a)
 	}
 	argsStr := strings.Join(argsEscaped, "\t")
-	if _, err := c.conn.Write([]byte(argsStr)); err != nil {
+	if _, err := packet.Write([]byte(argsStr)); err != nil {
 		return fmt.Errorf("reply args failed: %w", err)
 	}
-	if _, err := c.conn.Write([]byte("\n")); err != nil {
+	if _, err := packet.Write([]byte("\n")); err != nil {
 		return fmt.Errorf("reply end failed: %w", err)
+	}
+
+	// c.logger.Debugf("packet=%s", packet.String())
+	if _, err := packet.WriteTo(c.conn); err != nil {
+		return fmt.Errorf("reply send failed: %w", err)
 	}
 	return nil
 }
@@ -194,9 +205,7 @@ func (c *clientImpl) processLookup(args []string) error {
 		return fmt.Errorf("json marshal failed: %w", err)
 	}
 	resultString := string(resultBin)
-	resultValue := Tabescape(resultString)
-
-	return c.reply(reply, resultValue)
+	return c.reply(reply, resultString)
 }
 
 func (c *clientImpl) processBegin(args []string) error {
@@ -233,40 +242,38 @@ func (c *clientImpl) processSet(args []string) error {
 
 	tx.values[key] = value
 
-	return c.reply(ReplyOK, "")
+	return c.reply(ReplyOK)
+}
+
+func (c *clientImpl) processNotImplemented(fct string, args []string) error {
+	c.logger.Warnf("%v %v", fct, args)
+	return c.reply(ReplyFail, "not implemented")
 }
 
 func (c *clientImpl) processCommit(args []string) error {
-	c.logger.Warnf("processCommit %v", args)
-	return c.reply(ReplyFail, "not implemented")
+	return c.processNotImplemented("processCommit", args)
 }
 
 func (c *clientImpl) processIterate(args []string) error {
-	c.logger.Warnf("processIterate %v", args)
-	return c.reply(ReplyFail, "not implemented")
+	return c.processNotImplemented("processIterate", args)
 }
 
 func (c *clientImpl) processCommitAsync(args []string) error {
-	c.logger.Warnf("processCommitAsync %v", args)
-	return c.reply(ReplyFail, "not implemented")
+	return c.processNotImplemented("processCommitAsync", args)
 }
 
 func (c *clientImpl) processRollback(args []string) error {
-	c.logger.Warnf("processRollback %v", args)
-	return c.reply(ReplyFail, "not implemented")
+	return c.processNotImplemented("processRollback", args)
 }
 
 func (c *clientImpl) processUnset(args []string) error {
-	c.logger.Warnf("processUnset %v", args)
-	return c.reply(ReplyFail, "not implemented")
+	return c.processNotImplemented("processUnset", args)
 }
 
 func (c *clientImpl) processAtomicInc(args []string) error {
-	c.logger.Warnf("processAtomicInc %v", args)
-	return c.reply(ReplyFail, "not implemented")
+	return c.processNotImplemented("processAtomicInc", args)
 }
 
 func (c *clientImpl) processTimestamp(args []string) error {
-	c.logger.Warnf("processTimestamp %v", args)
-	return c.reply(ReplyFail, "not implemented")
+	return c.processNotImplemented("processTimestamp", args)
 }
