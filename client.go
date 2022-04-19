@@ -1,6 +1,7 @@
 package dovecot
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"net"
@@ -182,12 +183,20 @@ func (c *clientImpl) processLookup(args []string) error {
 
 	c.logger.Debugf("  lookup path=%v", path)
 
-	reply, result, err := c.be.Lookup(c, path)
+	reply, resultObj, err := c.be.Lookup(c, path)
 	if err != nil {
 		errReply := c.reply(ReplyError, err.Error())
 		return multierr.Combine(err, errReply)
 	}
-	return c.reply(reply, result)
+
+	resultBin, err := json.Marshal(resultObj)
+	if err != nil {
+		return fmt.Errorf("json marshal failed: %w", err)
+	}
+	resultString := string(resultBin)
+	resultValue := Tabescape(resultString)
+
+	return c.reply(reply, resultValue)
 }
 
 func (c *clientImpl) processBegin(args []string) error {
