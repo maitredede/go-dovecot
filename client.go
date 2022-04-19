@@ -16,6 +16,7 @@ type Client interface {
 	RemoteAddr() net.Addr
 	LocalAddr() net.Addr
 	String() string
+	User() string
 }
 
 type clientImpl struct {
@@ -46,6 +47,10 @@ func (c *clientImpl) RemoteAddr() net.Addr {
 
 func (c *clientImpl) LocalAddr() net.Addr {
 	return c.conn.LocalAddr()
+}
+
+func (c *clientImpl) User() string {
+	return c.user
 }
 
 type commandHandler func(args []string) error
