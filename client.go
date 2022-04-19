@@ -173,22 +173,11 @@ func (c *clientImpl) reply(command Reply, args ...string) error {
 }
 
 func (c *clientImpl) processLookup(args []string) error {
-	keyArg := args[0]
+	path := args[0]
 
-	// c.logger.Debugf("looking up %v", keyArg)
-	keyArr := strings.SplitN(keyArg, "/", 2)
+	c.logger.Debugf("  lookup path=%v", path)
 
-	keyType := keyArr[0]
-	key := keyArr[1]
-
-	var ns string
-	if keyType == "priv" {
-		ns = c.user
-	}
-
-	c.logger.Debugf("  lookup keyType=%v key=%v ns=%v", keyType, key, ns)
-
-	reply, result, err := c.be.Lookup(c, keyType, key, ns)
+	reply, result, err := c.be.Lookup(c, path)
 	if err != nil {
 		errReply := c.reply(ReplyError, err.Error())
 		return multierr.Combine(err, errReply)

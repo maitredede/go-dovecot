@@ -77,8 +77,8 @@ const (
 )
 
 const (
-	PathShared  = "shared/"
-	PathPrivate = "priv/"
+	PathShared  = "shared"
+	PathPrivate = "priv"
 )
 
 type CommitRet int
