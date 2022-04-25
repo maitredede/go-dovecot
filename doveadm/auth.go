@@ -6,6 +6,7 @@ import (
 	"net/http"
 )
 
+//Auth Authentication interface
 type Auth interface {
 	apply(req *http.Request) error
 }
@@ -32,12 +33,14 @@ func (a *authBasic) apply(req *http.Request) error {
 	return nil
 }
 
+//AuthWithAPIKey provides authentication with API key
 func AuthWithAPIKey(key string) Auth {
 	return &authAPIKey{
 		key: key,
 	}
 }
 
+//AuthWithPassword provides basic authentication with password
 func AuthWithPassword(password string) Auth {
 	return &authBasic{
 		password: password,

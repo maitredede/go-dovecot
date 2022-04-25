@@ -104,3 +104,13 @@ func (c *Client) Stop(ctx context.Context) (interface{}, error) {
 
 	return c.ExecuteCommand(ctx, "stop", params, "tag1")
 }
+
+//AuthCacheFlush Flush authentication cache for one user or all users.
+// https://doc.dovecot.org/admin_manual/doveadm_http_api/#doveadm-auth-cache-flush
+func (c *Client) AuthCacheFlush(ctx context.Context, user []string) (interface{}, error) {
+	params := make(map[string]interface{})
+	if len(user) > 0 {
+		params["user"] = user
+	}
+	return c.ExecuteCommand(ctx, "authCacheFlush", params, "tag1")
+}
